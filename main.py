@@ -8,6 +8,7 @@ from time import sleep
 TOKEN = os.getenv("TG_TOKEN")
 GROUP_ID = os.getenv("TG_GROUP_ID")
 
+
 # URL страницы
 base_url = "https://www.microsoft.com/tr-tr/store/deals/games/xbox"
 headers = {

@@ -106,7 +106,6 @@ def games_parsing(url):
             return None
         
         for card in game_cards:
-            pid = card.get('data-bi-pid')
             title = card.get('data-bi-prdname')
             
             old_price_element = card.find('span', class_='text-line-through text-muted')
@@ -118,8 +117,7 @@ def games_parsing(url):
             image_element = card.find('img')
             image = image_element['src'].split('?q')[0] if image_element and 'src' in image_element.attrs else 'N/A'
 
-            games_data[pid] = {
-                'title': title,
+            games_data[title] = {
                 'old_price': old_price,
                 'new_price': new_price,
                 'image_url': image
@@ -195,7 +193,7 @@ def prepare_messages(filename, ignore_list):
             # Проверяем, что ключ "new" существует и не равен None
             if value.get("new") is not None:
                 new_data = value["new"]
-                title = new_data.get("title", "No Title")
+                title = key
                 old_price = new_data.get("old_price", "No Old Price")
                 new_price = new_data.get("new_price", "No New Price")
                 image_url = new_data.get("image_url", "")

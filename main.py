@@ -1,4 +1,4 @@
-import os, requests, json, time, asyncio
+import os, requests, json, re, time, asyncio
 from bs4 import BeautifulSoup
 from telegram import Bot
 from telegram.error import TelegramError, RetryAfter
@@ -20,7 +20,15 @@ headers = {
     'client-id': 'NO_AUTH',
     'client-version': '1DS-Web-JS-3.2.18'
 }
-ignore_list = ["N/A", "Dahil+ price with subscription", "Dahil price with subscription", "Dahil+ with", "Dahil with"]
+
+
+def is_price(value: str) -> bool:
+    """
+    Проверяет, является ли строка ценой в формате "₺XXX.XXX,XX" или "Ücretsiz".
+    Возвращает True, если строка соответствует формату цены, иначе False.
+    """
+    pattern = r"^₺\d{1,3}(\.\d{3})*,\d{2}\+?$"
+    return bool(re.fullmatch(pattern, value) or value == "Ücretsiz")
 
 
 def create_empty_file_if_not_exists(filename):
@@ -117,14 +125,12 @@ def games_parsing(url):
             image_element = card.find('img')
             image = image_element['src'].split('?q')[0] if image_element and 'src' in image_element.attrs else 'N/A'
 
-            if new_price not in ignore_list and image not in ignore_list:
+            if is_price(new_price) and image != 'N/A':
                 games_data[title] = {
                     'old_price': old_price,
                     'new_price': new_price,
                     'image_url': image
                 }
-            else:
-                continue
         
         # Находим последний элемент с классом "page-item"
         pagination_items = soup.find_all('li', class_='page-item')
@@ -178,12 +184,11 @@ def update_games_data(games_data, parsed_data):
             # Добавление новой игры
             games_data[game_id] = new_attributes
 
-def prepare_messages(filename, ignore_list):
+def prepare_messages(filename):
     """
     Подготавливает сообщения из JSON-файла для отправки в Telegram.
 
     :param filename: Путь к JSON-файлу
-    :param ignore_list: Список значений, которые нужно игнорировать
     :return: Список сообщений в формате текста и ссылок на изображения
     """
     try:
@@ -260,7 +265,7 @@ async def main():
         save_data('games_data.json', games_data)
         print("Task completed successfully!")
 
-        messages = prepare_messages('diff_data.json', ignore_list)
+        messages = prepare_messages('diff_data.json')
         for msg in messages:
             print("Сообщение:")
             print(msg["text"])

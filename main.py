@@ -20,7 +20,7 @@ headers = {
     'client-id': 'NO_AUTH',
     'client-version': '1DS-Web-JS-3.2.18'
 }
-ignore_list = ["N/A", "Dahil+ price with subscription", "Dahil price with subscription"]
+ignore_list = ["N/A", "Dahil+ price with subscription", "Dahil price with subscription", "Dahil+ with", "Dahil with"]
 
 
 def create_empty_file_if_not_exists(filename):

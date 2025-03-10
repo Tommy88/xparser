@@ -117,11 +117,14 @@ def games_parsing(url):
             image_element = card.find('img')
             image = image_element['src'].split('?q')[0] if image_element and 'src' in image_element.attrs else 'N/A'
 
-            games_data[title] = {
-                'old_price': old_price,
-                'new_price': new_price,
-                'image_url': image
-            }
+            if new_price not in ignore_list and image not in ignore_list:
+                games_data[title] = {
+                    'old_price': old_price,
+                    'new_price': new_price,
+                    'image_url': image
+                }
+            else:
+                continue
         
         # Находим последний элемент с классом "page-item"
         pagination_items = soup.find_all('li', class_='page-item')
@@ -198,10 +201,8 @@ def prepare_messages(filename, ignore_list):
                 new_price = new_data.get("new_price", "No New Price")
                 image_url = new_data.get("image_url", "")
 
-                # Проверяем, что new_price и image_url не содержатся в списке игнорируемых значений
-                if new_price not in ignore_list and image_url not in ignore_list:
-                    message = f"{title}\nLast: {old_price}\nSale: {new_price}"
-                    messages.append({"text": message, "image_url": image_url})
+                message = f"{title}\nLast: {old_price}\nSale: {new_price}"
+                messages.append({"text": message, "image_url": image_url})
 
         return messages
 

@@ -1,8 +1,9 @@
-import os, requests, json, re, time, asyncio
+import os, requests, json, re, asyncio
 from bs4 import BeautifulSoup
 from telegram import Bot
 from telegram.error import TelegramError, RetryAfter
 from time import sleep
+from datetime import datetime, timedelta
 
 
 TOKEN = os.getenv("TG_TOKEN")
@@ -125,11 +126,14 @@ def games_parsing(url):
             image_element = card.find('img')
             image = image_element['src'].split('?q')[0] if image_element and 'src' in image_element.attrs else 'N/A'
 
+            date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # "2025-03-10 14:30:15"
+
             if is_price(new_price) and image != 'N/A':
                 games_data[title] = {
                     'old_price': old_price,
                     'new_price': new_price,
-                    'image_url': image
+                    'image_url': image,
+                    'date':      date_str
                 }
         
         # Находим последний элемент с классом "page-item"
@@ -168,21 +172,32 @@ def find_differences(games_data, parsed_data):
 
 
 def update_games_data(games_data, parsed_data):
-    # Удаляем игры, которых нет в новых данных
-    keys_to_remove = set(games_data.keys()) - set(parsed_data.keys())
+    # Удаляет из games_data только те игры, у которых прошло 7 дней с даты сохранения.
+    now = datetime.now()
+    keys_to_remove = set()
+
+    for game_id, attributes in games_data.items():
+        saved_date_str = attributes.get("date")
+        if saved_date_str:
+            saved_date = datetime.strptime(saved_date_str, "%Y-%m-%d %H:%M:%S")
+            if now >= saved_date + timedelta(days=7):
+                keys_to_remove.add(game_id)
+                
     for key in keys_to_remove:
         del games_data[key]
     
-    # Обновляем существующие игры и добавляем новые
     for game_id, new_attributes in parsed_data.items():
         if game_id in games_data:
-            # Обновление только изменённых атрибутов
-            games_data[game_id].update(
-                {k: v for k, v in new_attributes.items() if games_data[game_id].get(k) != v}
-            )
+            # Проверяем, изменился ли хотя бы один атрибут, кроме "date"
+            attributes_to_update = {k: v for k, v in new_attributes.items() if k != "date" and games_data[game_id].get(k) != v}
+            
+            if attributes_to_update:
+                # Если были изменения, обновляем все атрибуты
+                games_data[game_id].update(attributes_to_update)
         else:
-            # Добавление новой игры
+            # Добавляем новую игру
             games_data[game_id] = new_attributes
+
 
 def prepare_messages(filename):
     """

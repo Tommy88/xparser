@@ -168,11 +168,6 @@ def find_differences(games_data, parsed_data):
 
 
 def update_games_data(games_data, parsed_data):
-    # Удаляем игры, которых нет в новых данных
-    keys_to_remove = set(games_data.keys()) - set(parsed_data.keys())
-    for key in keys_to_remove:
-        del games_data[key]
-    
     # Обновляем существующие игры и добавляем новые
     for game_id, new_attributes in parsed_data.items():
         if game_id in games_data:
